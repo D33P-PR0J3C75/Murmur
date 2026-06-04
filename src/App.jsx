@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import './App.css';
 
-const socket = io('127.0.0.1:5000');
+const socket = io();
 
 export default function App() {
   const [showUsers, setShowUsers] = useState(false);
@@ -106,7 +106,7 @@ export default function App() {
           <div id="navbar">
             <button onClick={() => {setShowUsers(!showUsers)}}>Online: <b>{users.length}</b></button>
             <span>{name}</span>
-            <button onClick={() => {setNewUser(true); setName('Anon'); setMessage(''); socket.disconnect();}}>Log Out</button>
+            <button onClick={() => {window.location.reload();}}>Log Out</button>
           </div>
 
           {showUsers &&

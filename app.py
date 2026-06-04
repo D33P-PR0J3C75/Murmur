@@ -20,8 +20,8 @@ def on_disconnect():
   users.pop(request.sid, None)
 
   socketio.emit(
-    "online_count",
-    len(users)
+      "online_list",
+      list(users.values())
   )
 
   print("Disconnected")
