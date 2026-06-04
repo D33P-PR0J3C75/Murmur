@@ -1,5 +1,5 @@
 # imports
-from flask import Flask, request
+from flask import Flask, request, send_from_directory
 from flask_socketio import SocketIO, emit
 
 # data
@@ -51,7 +51,11 @@ def on_message(data):
 
 @app.route("/")
 def index():
-  return "Murmur is running."
+  return send_from_directory("dist", "index.html")
+
+@app.route("/assets/<path:path>")
+def assets(path):
+    return send_from_directory("dist/assets", path)
 
 if __name__ == "__main__":
   socketio.run(
