@@ -1,9 +1,9 @@
 # imports
-from flask import Flask
+from flask import Flask, request
 from flask_socketio import SocketIO, emit
 
 # data
-users = []
+users = {}
 messages = []
 
 # app
@@ -17,7 +17,26 @@ def on_connect():
 
 @socketio.on("disconnect")
 def on_disconnect():
+  users.pop(request.sid, None)
+
+  socketio.emit(
+    "online_count",
+    len(users)
+  )
+
   print("Disconnected")
+
+@socketio.on("user_join")
+def on_join(name):
+  users[request.sid] = name
+  print(users)
+
+  socketio.emit(
+    "online_count",
+    len(users)
+  )
+
+  print(name, "joined")
 
 @socketio.on("send_message")
 def on_message(data):
@@ -28,6 +47,7 @@ def on_message(data):
     data,
     broadcast=True
   )
+
 
 @app.route("/")
 def index():
