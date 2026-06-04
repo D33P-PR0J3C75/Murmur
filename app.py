@@ -32,8 +32,8 @@ def on_join(name):
   print(users)
 
   socketio.emit(
-    "online_count",
-    len(users)
+    "online_list",
+    list(users.values())
   )
 
   print(name, "joined")

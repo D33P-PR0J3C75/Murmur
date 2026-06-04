@@ -5,12 +5,27 @@ import './App.css';
 const socket = io('127.0.0.1:5000');
 
 export default function App() {
+  const [showUsers, setShowUsers] = useState(false);
   const [chatData, setChatData] = useState([]);
   const [newUser, setNewUser] = useState(true);
   const [message, setMessage] = useState('');
   const [name, setName] = useState('Anon');
-  const [users, setUsers] = useState(0);
+  const [users, setUsers] = useState([]);
   const chatRef = useRef(null);
+
+  function uName() {
+    let userName = name;
+    
+    if(users.includes(name)) return;
+
+    if(name.startsWith('ovr')) { // 😈😈😈 Muhahaha... I've got a secret backdoor for myself.
+      userName = name.slice(4);
+    }
+
+    socket.emit('user_join', userName || 'Anon');
+    setName(userName);
+    setNewUser(false);
+  }
   
   function sendText(msg) {
     if(!msg.trim()) return;
@@ -52,8 +67,8 @@ export default function App() {
       ]);
     });
 
-    socket.on("online_count", (count) => {
-      setUsers(count);
+    socket.on("online_list",(names) => {
+      setUsers(names);
     })
 
     return () => {
@@ -65,38 +80,60 @@ export default function App() {
     const el = chatRef.current;
     if(el) {
       el.scrollTop = el.scrollHeight;
-    }
-  }, [chatData])
+    };
+  }, [chatData]);
 
   return (
     <>
       {newUser &&
         <div id="askUser">
           <h1>Who are you?</h1>
-          <input id="unInp" type="text" placeholder='User Name' onChange={(e) => setName(e.target.value)} onKeyDown={(e) => {if(e.key === "Enter"){socket.emit("user_join", name || "Anon"); setNewUser(false);}}} />
-          <button type="submit" onClick={() => {socket.emit("user_join", name || "Anon"); setNewUser(false);}}>Confirm</button>
+          {users.includes(name) && <p>Username is taken.</p>}
+          <input type="text" placeholder="User Name"
+          onChange={(e) => setName(e.target.value)} onKeyDown={(e) => {
+            if(e.key === 'Enter') {uName()}
+            }} />
+
+          <button
+          onClick={() => {
+            if(!users.includes(name)) {uName()}
+            }}>Confirm</button>
         </div>
       }
 
       {!newUser &&
         <div id="app">
           <div id="navbar">
-            <span>Online: <b>{users}</b></span>
+            <button onClick={() => {setShowUsers(!showUsers)}}>Online: <b>{users.length}</b></button>
             <span>{name}</span>
-            <button onClick={() => {setNewUser(true); setName('Anon'); setMessage('');}}>Log Out</button>
+            <button onClick={() => {setNewUser(true); setName('Anon'); setMessage(''); socket.disconnect();}}>Log Out</button>
           </div>
 
+          {showUsers &&
+            <div id="users">
+              {users.map((user, index)  => {
+                return <span key={index}>{user}</span>
+              })}
+            </div>
+          }
+
           <div id="chat" ref={chatRef}>
-            {chatData.map((message) => {
+            {chatData.map((message, index) => {
+              const showSender = index === 0 || chatData[index - 1].user !== message.user;
+
               return (
-                <div key={message.id}>
-                  <p><b style={{color: getColor(message.user)}}>{message.user}: </b>{message.msg}</p>
+                <div key={message.id} className={message.user === name? 'myText':'text'} style={{
+                  background: message.user===name? 'rgba(20, 255, 50, 0.5)':'auto',
+                  alignSelf: message.user===name? 'end':'start'
+                }}>
+                  {showSender && <p className="sender" style={{color: getColor(message.user)}}>{message.user}</p>}
+                  <p className='message'>{message.msg}</p>
                 </div>
               )})}
           </div>
 
           <div id="messenger">
-            <input id="unInp" type="text" placeholder='Text Message...' value={message} onChange={(e) => setMessage(e.target.value)} onKeyDown={(e) => {if(e.key === "Enter"){sendText(message)}}} />
+            <input id="unInp" type="text" placeholder="Text Message..." value={message} onChange={(e) => setMessage(e.target.value)} onKeyDown={(e) => {if(e.key === 'Enter'){sendText(message)}}} />
             <button type="submit" onClick={() => {sendText(message)}}>⇨</button>
           </div>
         </div>
